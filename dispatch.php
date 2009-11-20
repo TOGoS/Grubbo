@@ -616,9 +616,55 @@ class EITCMS_Dispatcher {
         }
     }
 
+    function openWikiTextState( $state, &$html ) {
+        if( $state == 'p' ) {
+            $html .= "<p>";
+        } else if( $state == 'li' ) {
+            $html .= "<ul>\n";
+        }
+    }
+
+    function closeWikiTextState( $state, &$html ) {
+        if( $state == 'p' ) {
+            $html .= "</p>\n\n";
+        } else if( $state == 'li' ) {
+            $html .= "</ul>\n\n";
+        }
+    }
+
     function formatWikiText( $wiki ) {
-        $html = preg_replace_callback( '/\[([a-z]+:\S+)(?:\s([^\]]+))?\]|([^\[]*|\[)/', array($this,'replaceWikiLink'), $wiki );
-        $html = $this->textParagraphsToHtml($html);
+        $fixedLinks = preg_replace_callback( '/\[([a-z]+:\S+)(?:\s([^\]]+))?\]|([^\[]*|\[)/', array($this,'replaceWikiLink'), $wiki );
+
+        // TODO: get a real wikitext formatter
+
+        $state = null;
+        $html = '';
+
+        $lines = explode( "\n", $fixedLinks );
+        foreach( $lines as $line ) {
+            $line = trim($line);
+            if( preg_match( '/^\* (.*)$/', $line, $bif ) ) {
+                $newState = 'li';
+                $line = $bif[1];
+            } else if( $line == '' ) {
+                $newState = null;
+            } else {
+                $newState = 'p';
+            }
+
+            if( $state != $newState ) {
+                $this->closeWikiTextState( $state, $html );
+                $this->openWikiTextState( $newState, $html );
+            }
+            $state = $newState;
+
+            if( $state == 'li' ) {
+                $html .= "<li>".$line."</li>\n";
+            } else {
+                $html .= $line;
+            }
+        }
+        $this->closeWikiTextState( $state, $html );
         return $html;
     }
 
@@ -642,9 +688,27 @@ class EITCMS_Dispatcher {
         return $res;
     }
 
+    function getUser( $username ) {
+        $users = array(
+            'stevens' => new EITCMS_User( 'stevens', 'Dan Stevens', 'stevens@earthit.com' ),
+            'fagan' => new EITCMS_User( 'fagan', 'Pitt Fagan', 'fagan@earthit.com' ),
+            'chapiewsky' => new EITCMS_User( 'chapiewsky', 'Jared Chapiewsky', 'chapiewsky@earthit.com' ),
+            'losenegger' => new EITCMS_User( 'losenegger', 'Corey Losenegger', 'losenegger@earthit.com' ),
+            'zeisloft' => new EITCMS_User( 'zeisloft', 'Jennifer Zeisloft', 'zeisloft@earthit.com' ),
+            'simcock' => new EITCMS_User( 'simcock', 'Adam Simcock', 'simcock@earthit.com' ),
+        );
+        return @$users[$username];
+    }
+
     function getLoggedInUser() {
         if( !$this->user ) {
-            $this->user = new EITCMS_User( 'stevens', 'Dan Stevens', 'stevens@earthit.com' );
+            $this->startSession();
+            $username = $_SESSION['username'];
+            if( $username ) {
+                $this->user = $this->getUser($username);
+            } else {
+                $this->user = null;
+            }
         }
         return $this->user;
     }
@@ -787,6 +851,14 @@ class EITCMS_Dispatcher {
         return new EITCMS_StringResource( $content, $metadata );
     }
 
+    protected $sessionStarted;
+    function startSession() {
+        if( !$this->sessionStarted ) {
+            session_name('Grubbo');
+            session_start();
+        }
+    }
+
     function dispatch() {
         $rp = substr($_SERVER['PATH_INFO'],1);
         $an = @$_REQUEST['action'] or $an = 'view';
@@ -805,6 +877,7 @@ class EITCMS_Dispatcher {
         $this->currentActionName = $an;
 
         $tplVars = array(
+            'user' => $user,
             'resourceName' => $this->resourceName,
             'currentActionName' => $this->currentActionName,
             'documentActions' => array(),
@@ -867,11 +940,23 @@ class EITCMS_Dispatcher {
                     $this->getTemplate('new-ticket')->output($tplVars);
                     return;
                 }
+            } else if( $rp == 'login' ) {
+                $this->startSession();
+                $username = $_SERVER['PHP_AUTH_USER'];
+                $_SESSION['username'] = $username;
+                $this->redirectSeeOther( $this->pathTo('page:') );
+            } else if( $rp == 'logout' ) {
+                $this->startSession();
+                $_SESSION['username'] = null;
+                $this->redirectSeeOther( $this->pathTo('page:') );
             }
-        } else if( preg_match('/^(.*)\/tickets\/(\d+)$/',$this->resourceName,$bif ) ) {
-            #$projectInfo = $this->getProjectInfo($bif[1]);
-            $rmd = $this->resource->getContentMetadata();
-            $tplVars['pageTitle'] = $bif[1].' #'.$bif[2].': '.$rmd['doc/title'];
+        }
+
+        if( preg_match('/^(.*)\/tickets\/(\d+)$/',$this->resourceName,$bif ) ) {
+            if( $resource ) {
+                $rmd = $this->resource->getContentMetadata();
+                $tplVars['pageTitle'] = $bif[1].' #'.$bif[2].': '.$rmd['doc/title'];
+            }
         }
 
         $tplVars['documentActions'] = $this->getAllowedActions( $this->resourceName, $this->resource );
