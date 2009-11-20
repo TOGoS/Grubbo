@@ -1,0 +1,7 @@
+#!/bin/sh
+
+mkdir -p site/documents
+cd site
+git init
+echo >.lock
+sudo chown www-data:webadmin .

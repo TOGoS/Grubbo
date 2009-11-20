@@ -1,0 +1,32 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+p, ul, blockquote, pre, table {
+    padding: 0.3em;
+    margin: 0.3em;
+}
+body > * {
+    margin-left: 16px;
+    margin-right: 8px;
+}
+body > ul {
+    padding: 0.3em 0.3em 0.3em 2em;
+}
+.action-bar {
+    background: #DDD;
+    padding: 8px;
+    margin: 0;
+}
+h1, h2, h3, h4, h5, h6 {
+    padding: 8px 16px 8px 16px;
+    margin: 0;
+    font-family: Verdana;
+}
+table.form-pairs th {
+    text-align: right;
+    padding-left: 8px;
+    padding-right: 8px;
+    background: #EEE;
+    font-family: Verdana;
+}
