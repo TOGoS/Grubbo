@@ -35,7 +35,9 @@ foreach( $metadata as $k=>$v ) {
 </td></tr>
 <tr><td colspan="2">
 <input type="submit" name="update" value="Submit"/>
+<?php if(!$newPage) { ?>
 <input type="submit" name="delete" onclick="return confirm('Delete page?');" value="Delete"/>
+<?php } ?>
 </td></tr>
 </table>
 </form>

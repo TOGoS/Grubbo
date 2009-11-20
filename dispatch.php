@@ -273,11 +273,14 @@ class EITCMS_FileDocumentStore implements EITCMS_Store {
         fclose( $fh );
     }
 
-    public function put( $name, $document ) {
+    public function put( $name, $resource ) {
         $docStr = "";
         $isDoc = false;
         $nonDocProps = array();
-        foreach( $document->getContentMetadata() as $k=>$v ) {
+        if( $resource === null and file_exists($this->pathPrefix.$name.$this->docPostfix) ) {
+            // Deleting a doc
+            $isDoc = true;
+        } else if( $resource !== null ) foreach( $resource->getContentMetadata() as $k=>$v ) {
             if( preg_match('/^doc\/(.*)$/',$k,$bif) ) {
                 $isDoc = true;
                 $docStr .= $bif[1].": $v\n";
@@ -286,15 +289,19 @@ class EITCMS_FileDocumentStore implements EITCMS_Store {
             }
         }
         if( $isDoc ) {
-            $docStr .= "\n";
-            $docStr .= $document->getContent();
-            $fileDoc = new EITCMS_StringResource( $docStr, $nonDocProps );
-            $fileName = $name.$this->docPostfix;
+            if( $resource === null ) {
+                $fileDoc = null;
+            } else {
+                $docStr .= "\n";
+                $docStr .= $resource->getContent();
+                $fileDoc = new EITCMS_StringResource( $docStr, $nonDocProps );
+            }
+            $filename = $name.$this->docPostfix;
         } else {
-            $fileDoc = $document;
-            $fileName = $name;
+            $fileDoc = $resource;
+            $filename = $name;
         }
-        $this->_put( $fileName, $fileDoc );
+        $this->_put( $filename, $fileDoc );
     }
 }
 
@@ -397,15 +404,38 @@ class EITCMS_GitStore extends EITCMS_FileDocumentStore implements EITCMS_Committ
     protected function getGitArgv( $subCmdArgv ) {
         return array_merge(
             $this->gitBaseArgv,
-            array('--git-dir='.$this->gitDir,'--work-tree='.$this->wtDir),
+            /* Specifying git-dir and work-tree doesn't actually work.
+             * We need to chdir instead (see git(), below). */
+            // array('--git-dir='.$this->gitDir,'--work-tree='.$this->wtDir),
             $subCmdArgv
         );
     }
 
+    /**
+     * Use this to clean out index.lock after every git invocation,
+     * since git often fails to and will cause problems if it's still
+     * around when we run it again.
+     */
+    protected function cleanUpIndexLock() {
+        $gitIndexLock = "{$this->gitDir}/index.lock";
+        if( file_exists($gitIndexLock) ) unlink($gitIndexLock);
+    }
+
     public function git() {
+        $oldDir = getcwd();
+        chdir( $this->wtDir );
         $args = $this->getGitArgv( func_get_args() );
         $proc = new EITCMS_ExternalProcess($args);
-        return $proc->runOrDie();
+        try {
+            $r = $proc->runOrDie();
+            $this->cleanUpIndexLock();
+            chdir( $oldDir );
+            return $r;
+        } catch( Exception $e ) {
+            $this->cleanUpIndexLock();
+            chdir( $oldDir );
+            throw $e;
+        }
     }
 
     public function openTransaction() {
@@ -431,8 +461,8 @@ class EITCMS_GitStore extends EITCMS_FileDocumentStore implements EITCMS_Committ
             $this->git('rm',$this->postWtPrefix.$name);
         } else {
             parent::_put( $name, $res );
+            $this->git('add',$this->postWtPrefix.$name);
         }
-        $this->git('add',$this->postWtPrefix.$name);
     }
 
     public function commit( EITCMS_CommitInfo $commitInfo ) {
@@ -715,7 +745,11 @@ class EITCMS_Dispatcher {
         // Assume PATH_INFO of format '/(.+/)*.*'
 
         $slashCount = substr_count( $_SERVER['PATH_INFO'], '/' );
-        return str_repeat('../', $slashCount-1).$absWebPath;
+        if( $slashCount == 1 ) {
+            return "./".$absWebPath;
+        } else {
+            return str_repeat('../', $slashCount-1).$absWebPath;
+        }
     }
 
     function redirectSeeOther( $url ) {
@@ -734,16 +768,41 @@ class EITCMS_Dispatcher {
         }
     }
 
+    function createBlankTicket() {
+        $metadata = array(
+            'doc/format' => 'wiki',
+            'doc/ticket' => 'true',
+            'doc/title' => 'New Ticket',
+        );
+        $content = "Enter text here";
+        return new EITCMS_StringResource( $content, $metadata );
+    }
+
+    function createBlankDocument() {
+        $metadata = array(
+            'doc/format' => 'wiki',
+            'doc/title' => 'New Page',
+        );
+        $content = "Enter text here";
+        return new EITCMS_StringResource( $content, $metadata );
+    }
+
     function dispatch() {
         $rp = substr($_SERVER['PATH_INFO'],1);
         $an = @$_REQUEST['action'] or $an = 'view';
         $user = $this->getLoggedInUser();
         $date = $this->getCurrentDate();
 
-        if( $rp == null ) {  $rp = 'index';  }
+        // If we're at a ../ URL, find an index page if one exists
+        if( preg_match('/^$|\/$/',$rp) and $resource = $this->resourceStore->get($rp.'index') ) {
+            $rp = $rp.'index';
+        } else {
+            $resource = $this->resourceStore->get($rp);
+        }
 
-        $this->currentActionName = $an;
         $this->resourceName = $rp;
+        $this->resource = $resource;
+        $this->currentActionName = $an;
 
         $tplVars = array(
             'resourceName' => $this->resourceName,
@@ -758,7 +817,6 @@ class EITCMS_Dispatcher {
             ),
         );
 
-        $this->resource = $this->resourceStore->get($rp);
         if( $this->resource !== null ) {
             $resourceMetadata = $this->resource->getContentMetadata();
             $docTitle = @$resourceMetadata['title'] or
@@ -771,14 +829,10 @@ class EITCMS_Dispatcher {
         $p = $this->getPermissions();
 
         if( $this->resource === null ) {
-            if( preg_match('/^((.*?)\/tickets)\/new$/',$this->resourceName,$bif) ) {
+            if( preg_match('/^(.*)\/new-ticket$/',$this->resourceName,$bif) ) {
                 $ticketDirName = $bif[1];
-                $projectDirName = $bif[2];
-                if( !$p->isActionAllowed('create-ticket',$projectDirName) ) {
-                    $tplVars['errorMessageHtml'] = "</p>You cannot make tickets!</p>";
-                    $this->getTemplate('not-allowed')->output($tplVars);
-                    return;
-                }
+                $this->ensureEditPermission();
+                $tplVars['pageTitle'] = "Creating new ticket";
                 if( $an == 'post' ) {
                     $doc = $this->getDocumentFromRequest();
                     $this->resourceStore->openTransaction();
@@ -807,6 +861,8 @@ class EITCMS_Dispatcher {
                     }
                     $this->redirectSeeOther( $this->pathTo("page:$newResourceName") );
                 } else {
+                    $tplVars['newPage'] = true;
+                    $tplVars['resource'] = $this->createBlankTicket();
                     $tplVars['projectDirName'] = $projectDirName;
                     $this->getTemplate('new-ticket')->output($tplVars);
                     return;
@@ -821,21 +877,42 @@ class EITCMS_Dispatcher {
         $tplVars['documentActions'] = $this->getAllowedActions( $this->resourceName, $this->resource );
         $tplVars['resource'] = $this->resource;
 
-        if( $an == 'edit' ) {
+        $pageIsNew = ($this->resource === null);
+
+        if( $an == 'edit' and $this->resource !== null ) {
             $this->ensureEditPermission();
             $tplVars['pageTitle'] = "Editing $docTitle";
             $this->getTemplate('edit-page')->output($tplVars);
-        } else if( $an == 'post' ) {
-            $pageIsNew = ($this->resource === null);
-
+        } else if( $an == 'post' and $_REQUEST['delete'] ) {
             $this->ensureEditPermission();
-            $doc = $this->getDocumentFromRequest();
+            if( $this->resource ) {
+                $metadata = $this->resource->getContentMetadata();
+                $docTitle = $metadata['doc/title'];
+            } else {
+                $docTitle = null;
+            }
+            $commitTitle = "Deleted ".$this->resourceName.($title ? " - $docTitle" : '');
+            $commitInfo = new EITCMS_CommitInfo( $user, $date, $commitTitle );
             $this->resourceStore->openTransaction();
             try {
-                $metadata = $doc->getContentMetadata();
-                $docTitle = $metadata['doc/title'];
-                $commitTitle = ($pageIsNew ? "Edited" : "New page").": ".$this->resourceName.($title ? " - $docTitle" : '');
-                $commitInfo = new EITCMS_CommitInfo( $user, $date, $commitTitle );
+                $this->resourceStore->put( $this->resourceName, null );
+                $this->resourceStore->commit( $commitInfo );
+                $this->resourceStore->closeTransaction();
+            } catch( Exception $e ) {
+                $this->resourceStore->cancelTransaction();
+                throw $e;
+            }
+            $url = $this->pathTo('page:');
+            $this->redirectSeeOther( $url );
+        } else if( $an == 'post' ) {
+            $this->ensureEditPermission();
+            $doc = $this->getDocumentFromRequest();
+            $metadata = $doc->getContentMetadata();
+            $docTitle = $metadata['doc/title'];
+            $commitTitle = ($pageIsNew ? "New page" : "Edited").": ".$this->resourceName.($title ? " - $docTitle" : '');
+            $commitInfo = new EITCMS_CommitInfo( $user, $date, $commitTitle );
+            $this->resourceStore->openTransaction();
+            try {
                 $this->resourceStore->put( $this->resourceName, $doc );
                 $this->resourceStore->commit( $commitInfo );
                 $this->resourceStore->closeTransaction();
@@ -846,6 +923,8 @@ class EITCMS_Dispatcher {
             $this->redirectSeeOther( $this->pathTo("page:".$this->resourceName) );
         } else if( $this->resource === null ) {
             $tplVars['pageTitle'] = "Create new page";
+            $tplVars['newPage'] = true;
+            $tplVars['resource'] = $this->createBlankDocument();
             $this->getTemplate('new-page')->output($tplVars);
         } else {
             if( !$tplVars['pageTitle'] ) { $tplVars['pageTitle'] = $docTitle; }

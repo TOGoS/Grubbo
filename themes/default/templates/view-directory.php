@@ -4,8 +4,6 @@
 ?>
 <?php $this->outputTemplate('page-header',array('pageTitle'=>$pageTitle)); ?>
 
-<p>poopy doop</p>
-
 <ul>
 <?php
 
@@ -32,7 +30,5 @@ foreach( $sortedEntries as $name=>$target ) {
 
 ?>
 </ul>
-
-<p>poopy doop</p>
 
 <?php $this->outputTemplate('page-footer',array()); ?>
