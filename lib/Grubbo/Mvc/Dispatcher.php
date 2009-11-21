@@ -11,8 +11,10 @@ require_once 'Grubbo/Vcs/GitDocumentStore.php';
 class Grubbo_Mvc_Dispatcher {
     public $resourceStore;
 
+    public $siteTitle = 'Grubbo Demo';
+    public $siteUri = 'http://grubbo.x/';    
+
     public $mailer = null;
-    public $siteUri = 'http://grubbo.x/';
     public $emailSourceDomain = 'grubbo.x';
     public $docUpdateFromAddress = 'updates@grubbo.x';
 
@@ -351,7 +353,7 @@ class Grubbo_Mvc_Dispatcher {
             'resourceName' => $this->resourceName,
             'currentActionName' => $this->currentActionName,
             'documentActions' => array(),
-            'siteTitle' => 'EarthIT Grubbo',
+            'siteTitle' => $this->siteTitle,
             'ticketStatusOptions' => array(
                 'assigned' => 'Assigned',
                 'development' => 'Development',

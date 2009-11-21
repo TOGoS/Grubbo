@@ -16,6 +16,7 @@ $smtp = new Net_SMTP('mail.earthit.com',25,'grubbo.earthit.com');
 #$smtp->setDebug(true);
 try {
     $d = new Grubbo_Mvc_Dispatcher();
+    $d->siteTitle = 'EarthIT Grubbo';
     $d->siteUri = 'http://grubbo.earthit.com/';
     $d->mailer = new Grubbo_Mail_SmtpMailer($smtp);
     $d->emailSourceDomain = 'grubbo.earthit.com';
