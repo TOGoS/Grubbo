@@ -20,7 +20,7 @@ try {
     $d->siteUri = 'http://grubbo.earthit.com/';
     $d->mailer = new Grubbo_Mail_SmtpMailer($smtp);
     $d->emailSourceDomain = 'grubbo.earthit.com';
-    $d->docUpdateFromAddress = 'updates@grubbo.earthit.com';
+    $d->docUpdateFromAddress = 'EarthIT Grubbo Updates <updates@grubbo.earthit.com>';
     $d->dispatch();
 } catch( Exception $e ) {
     ez_print_exception( $e );
