@@ -98,6 +98,9 @@ class Grubbo_Mvc_Dispatcher {
                 $this->closeWikiTextState( $state, $html );
                 $this->openWikiTextState( $newState, $html );
             }
+            if( $state == $newState and $state == 'p' ) {
+                $html .= "<br />";
+            }
             $state = $newState;
 
             if( $state == 'li' ) {
