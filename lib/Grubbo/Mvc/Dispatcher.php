@@ -449,7 +449,7 @@ class Grubbo_Mvc_Dispatcher {
                 $docTitle = null;
             }
             $commitTitle = "Deleted ".$this->resourceName.($title ? " - $docTitle" : '');
-            $commitInfo = new Grubbo_CommitInfo( $user, $date, $commitTitle );
+            $commitInfo = new Grubbo_Vcs_CommitInfo( $user, $date, $commitTitle );
             $this->resourceStore->openTransaction();
             try {
                 $this->resourceStore->put( $this->resourceName, null );
