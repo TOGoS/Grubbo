@@ -1,6 +1,6 @@
 <html>
 <head>
-<title><?php echo htmlspecialchars($pageTitle); if($siteTitle) echo ' - ', htmlspecialchars($siteTitle); ?></title>
+<title><?php echo htmlspecialchars($pageTitle); if($siteTitle and $siteTitle != $pageTitle) echo ' - ', htmlspecialchars($siteTitle); ?></title>
 <link rel="stylesheet" type="text/css" href="<?php echo $this->htmlPathTo('resource:css/bogs.css'); ?>"/>
 </head>
 <body>
