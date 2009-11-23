@@ -1,9 +1,3 @@
-<?php $this->outputTemplate('page-header'); ?>
-
-<?php if($isTicket) { ?>
-<p><a href="filter-tickets">Show Tickets</a></p>
-<?php } ?>
-
 <?php
 
 $metadata = $resource->getContentMetadata();
@@ -22,6 +16,12 @@ foreach( $metadata as $k=>$v ) {
 }
 
 ?>
+
+<?php $this->outputTemplate('page-header'); ?>
+
+<?php if($isTicket) { ?>
+<p><a href="filter-tickets">Show Tickets</a></p>
+<?php }?>
 
 <form method="POST">
 <table class="form-pairs">
