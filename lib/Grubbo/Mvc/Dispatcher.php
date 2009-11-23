@@ -334,6 +334,24 @@ class Grubbo_Mvc_Dispatcher {
         }
     }
 
+    function filterPassAll( $thing ) {
+        return $thing;
+    }
+
+    function dispatchFilterTicketsPage( $dirName, $args, $tplVars ) {
+        $filteredTickets = array();
+        $dir = $this->resourceStore->get( $dirName );
+        $filterFunc = array($this,'filterPassAll');
+        foreach( $dir->getEntries() as $name=>$target ) {
+            $target = call_user_func($filterFunc,$target);
+            if( $target === null ) continue;
+            $filteredTickets[$name] = $target;
+        }
+        ksort($filteredTickets);
+        $tplVars['tickets'] = $filteredTickets;
+        $this->getTemplate('filter-tickets')->output($tplVars);
+    }
+
     function dispatch() {
         $rp = substr($_SERVER['PATH_INFO'],1);
         $an = @$_REQUEST['action'] or $an = 'view';
@@ -417,6 +435,8 @@ class Grubbo_Mvc_Dispatcher {
                     $this->getTemplate('new-ticket')->output($tplVars);
                     return;
                 }
+            } else if( preg_match('/^(.*)\/filter-tickets$/',$rp,$bif) ) {
+                return $this->dispatchFilterTicketsPage( $bif[1], $_REQUEST, $tplVars );
             } else if( $rp == 'login' ) {
                 $this->startSession();
                 $username = $_SERVER['PHP_AUTH_USER'];
