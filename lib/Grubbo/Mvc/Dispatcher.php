@@ -333,6 +333,7 @@ class Grubbo_Mvc_Dispatcher {
                   . '== '.$md['doc/title']." ==\n"
                   . $doc->getContent();
             $toAddys = $this->usernamesToRecipientStrings( array_merge($at,$cc) );
+            if( count($toAddys) == 0 ) return;
             $mes = new Grubbo_Mail_Message( $this->docUpdateFromAddress, $toAddys,
                                             $md['doc/title'].' updated', $body );
             $m->send( $mes );
@@ -429,11 +430,11 @@ class Grubbo_Mvc_Dispatcher {
                         $this->resourceStore->put( $newResourceName, $doc );
                         $this->resourceStore->commit( $commitInfo );
                         $this->resourceStore->closeTransaction();
-                        $this->docUpdated( $doc, $newResourceName );
                     } catch( Exception $e ) {
                         $this->resourceStore->cancelTransaction();
                         throw $e;
                     }
+                    $this->docUpdated( $doc, $newResourceName );
                     $this->redirectSeeOther( $this->pathTo("page:$newResourceName") );
                 } else {
                     $tplVars['newPage'] = true;
@@ -505,11 +506,11 @@ class Grubbo_Mvc_Dispatcher {
                 $this->resourceStore->put( $this->resourceName, $doc );
                 $this->resourceStore->commit( $commitInfo );
                 $this->resourceStore->closeTransaction();
-                $this->docUpdated( $doc, $this->resourceName );
             } catch( Exception $e ) {
                 $this->resourceStore->cancelTransaction();
                 throw $e;
             }
+            $this->docUpdated( $doc, $this->resourceName );
             $this->redirectSeeOther( $this->pathTo("page:".$this->resourceName) );
         } else if( $this->resource === null ) {
             $tplVars['pageTitle'] = "Create new page";

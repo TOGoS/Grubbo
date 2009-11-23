@@ -97,6 +97,7 @@ class Grubbo_Vcs_GitDocumentStore extends Grubbo_File_FileDocumentStore implemen
     }
 
     public function closeTransaction() {
+        if( $this->lock === null ) return;
         fclose( $this->lock ); // Release lock!
         $this->lock = null;
     }
