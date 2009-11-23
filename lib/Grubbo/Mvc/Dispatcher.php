@@ -164,7 +164,11 @@ class Grubbo_Mvc_Dispatcher {
 
     function getPermissions() {
         if( !$this->permissions ) {
-            $this->permissions = new Grubbo_Auth_Permissions( array('*'=>'*') );
+            if( $this->getLoggedInUser() === null ) {
+                $this->permissions = new Grubbo_Auth_Permissions( array() );
+            } else {
+                $this->permissions = new Grubbo_Auth_Permissions( array('*'=>'*') );
+            }
         }
         return $this->permissions;
     }
@@ -273,7 +277,8 @@ class Grubbo_Mvc_Dispatcher {
         if( $resourceName === null ) $resouceName = $this->resourceName;
 
         if( !$this->getPermissions()->isActionAllowed('edit',$this->resourceName) ) {
-            $tplVars['errorMessageHtml'] = "</p>You cannot edit this page!</p>";
+            $tplVars = $this->tplVars;
+            $tplVars['errorMessageHtml'] = "<p>You cannot edit this page!</p>";
             $this->getTemplate('not-allowed')->output($tplVars);
             exit();
         }
@@ -394,6 +399,8 @@ class Grubbo_Mvc_Dispatcher {
         }
 
         $p = $this->getPermissions();
+
+        $this->tplVars =& $tplVars;
 
         if( $this->resource === null ) {
             if( preg_match('/^(.*)\/new-ticket$/',$this->resourceName,$bif) ) {

@@ -9,7 +9,7 @@
 
 $links = array();
 $showActionLinks = false;
-foreach( $documentActions as $act ) {
+if( $documentActions !== null ) foreach( $documentActions as $act ) {
     if( $act->getActionName() == $currentActionName ) {
         $links[] = htmlspecialchars($act->getActionTitle());
     } else {
