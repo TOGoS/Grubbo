@@ -1,5 +1,9 @@
 <?php $this->outputTemplate('page-header'); ?>
 
+<?php if($isTicket) { ?>
+<p><a href="filter-tickets">Show Tickets</a></p>
+<?php}?>
+
 <?php
 
 $metadata = $resource->getContentMetadata();
