@@ -2,7 +2,7 @@
 
 <?php if($isTicket) { ?>
 <p><a href="filter-tickets">Show Tickets</a></p>
-<?php}?>
+<?php } ?>
 
 <?php
 
