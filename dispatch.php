@@ -18,7 +18,7 @@ try {
     $d = new Grubbo_Mvc_Dispatcher();
     $d->siteTitle = 'EarthIT Grubbo';
     $d->siteUri = 'http://grubbo.earthit.com/';
-    $d->mailer = new Grubbo_Mail_SmtpMailer($smtp);
+#    $d->mailer = new Grubbo_Mail_SmtpMailer($smtp);
     $d->emailSourceDomain = 'grubbo.earthit.com';
     $d->docUpdateFromAddress = 'EarthIT Grubbo Updates <updates@grubbo.earthit.com>';
     $d->dispatch();
