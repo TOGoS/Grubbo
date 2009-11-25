@@ -4,11 +4,11 @@ require_once 'Grubbo/Value/Blob.php';
 require_once 'Grubbo/Value/Resource.php';
 
 class Grubbo_Mail_Message implements Grubbo_Value_Blob, Grubbo_Value_Resource {
-    function __construct( $from, $to, $subject, $content, $cc=array(), $bcc=array() ) {
+    function __construct( $from, $to, $subject, $text, $cc=array(), $bcc=array() ) {
         $this->from = $from;
         $this->to = $to;
         $this->subject = $subject;
-        $this->content = $content;
+        $this->text = $text;
         $this->cc = $cc;
         $this->bcc = $bcc;
     }
@@ -32,9 +32,13 @@ class Grubbo_Mail_Message implements Grubbo_Value_Blob, Grubbo_Value_Resource {
         return array();
     }
     function getContent() {
-        return $this->content;
+        return $this;
     }
-    function writeContent($stream) {
-        fwrite( $stream, $this->getContent() );
+
+    function getData() {
+        return $this->text;
+    }
+    function writeDataToStream($stream) {
+        $stream->write( $this->getData() );
     }
 }

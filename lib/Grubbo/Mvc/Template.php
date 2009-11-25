@@ -24,7 +24,7 @@ class Grubbo_Mvc_Template {
     function formatDropdown( $name, $values, $default ) {
         $str = "<select name=\"".htmlspecialchars($name)."\">\n";
         foreach( $values as $k=>$v ) {
-            $str .= "<option value=\"".htmlspecialchars($v)."\"";
+            $str .= "<option value=\"".htmlspecialchars($k)."\"";
             if( $default == $k ) {
                 $str .= " selected";
             }

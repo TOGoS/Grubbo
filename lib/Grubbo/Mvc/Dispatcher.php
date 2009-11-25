@@ -3,10 +3,12 @@
 require_once 'Grubbo/Auth/Permissions.php';
 require_once 'Grubbo/Mvc/ResourceAction.php';
 require_once 'Grubbo/Mvc/Template.php';
-require_once 'Grubbo/Value/StringResource.php';
+require_once 'Grubbo/Value/SimpleResource.php';
 require_once 'Grubbo/Value/User.php';
 require_once 'Grubbo/Vcs/CommitInfo.php';
 require_once 'Grubbo/Vcs/GitDocumentStore.php';
+require_once 'Grubbo/IO/WebOutputStream.php';
+require_once 'Grubbo/Ticket/TicketFilter.php';
 
 class Grubbo_Mvc_Dispatcher {
     public $resourceStore;
@@ -117,18 +119,19 @@ class Grubbo_Mvc_Dispatcher {
         if( $res === null ) return null;
 
         $md = $res->getContentMetadata();
+        $blob = $res->getContent();
         $fmt = $md['doc/format'];
         if( $fmt == 'wiki' ) {
-            $content = $res->getContent();
+            $content = $blob->getData();
             $content = $this->formatWikiText( $content );
             $md['doc/format'] = 'html';
-            return new Grubbo_Value_StringResource( $content, $md );            
+            return new Grubbo_Value_SimpleResource( $content, $md );            
         } else if( $fmt == 'text' ) {
-            $content = $res->getContent();
+            $content = $blob->getData();
             $content = htmlspecialchars($content);
             $content = $this->textParagraphsToHtml($content);
             $md['doc/format'] = 'html';
-            return new Grubbo_Value_StringResource( $content, $md );
+            return new Grubbo_Value_SimpleResource( $content, $md );
         }
         return $res;
     }
@@ -195,6 +198,16 @@ class Grubbo_Mvc_Dispatcher {
         return $actions;
     }
 
+    function getTicketStatusOptions() {
+        return array(
+            'assigned' => 'Assigned',
+            'development' => 'Development',
+            'waiting' => 'Waiting',
+            'testing' => 'Testing',
+            'closed' => 'Closed',
+        );
+    }
+
     function resourceIsDocument( $resource ) {
         $md = $resource->getContentMetadata();        
         foreach( $md as $k=>$v ) {
@@ -245,7 +258,7 @@ class Grubbo_Mvc_Dispatcher {
         }
         $content = $_REQUEST['content'];
         $content = $this->replaceSigText( $content );
-        return new Grubbo_Value_StringResource( $content, $cmd );
+        return new Grubbo_Value_SimpleResource( $content, $cmd );
     }
 
     function pathTo( $uri ) {
@@ -291,7 +304,7 @@ class Grubbo_Mvc_Dispatcher {
             'doc/title' => 'New Ticket',
         );
         $content = "Enter text here";
-        return new Grubbo_Value_StringResource( $content, $metadata );
+        return new Grubbo_Value_SimpleResource( $content, $metadata );
     }
 
     function createBlankDocument() {
@@ -300,7 +313,7 @@ class Grubbo_Mvc_Dispatcher {
             'doc/title' => 'New Page',
         );
         $content = "Enter text here";
-        return new Grubbo_Value_StringResource( $content, $metadata );
+        return new Grubbo_Value_SimpleResource( $content, $metadata );
     }
 
     protected $sessionStarted;
@@ -331,7 +344,7 @@ class Grubbo_Mvc_Dispatcher {
                   . $this->siteUri . $docName . "\n"
                   . "\n"
                   . '== '.$md['doc/title']." ==\n"
-                  . $doc->getContent();
+                  . $doc->getContent()->getData();
             $toAddys = $this->usernamesToRecipientStrings( array_merge($at,$cc) );
             if( count($toAddys) == 0 ) return;
             $mes = new Grubbo_Mail_Message( $this->docUpdateFromAddress, $toAddys,
@@ -340,21 +353,36 @@ class Grubbo_Mvc_Dispatcher {
         }
     }
 
-    function filterPassAll( $thing ) {
-        return $thing;
+    function collectFiles( $dir, $filterFunc, $prefix, &$dest ) {
+        foreach( $dir->getEntries() as $name=>$entry ) {
+            $fullName = $prefix ? "$prefix/$name" : $name;
+            $target = $entry->getContent();
+            if( $target instanceof Grubbo_Value_Directory ) {
+                $this->collectFiles( $target, $filterFunc, $fullName, $dest );
+            } else {
+                $entry = call_user_func($filterFunc,$entry);
+                if( $entry === null ) continue;
+                $dest[$fullName] = $entry;
+            }
+        }
     }
 
-    function dispatchFilterTicketsPage( $dirName, $args, $tplVars ) {
+    function dispatchFilterTicketsPage( $dirName, $args ) {
+        $tplVars = $this->tplVars;
         $filteredTickets = array();
         $dir = $this->resourceStore->get( $dirName );
-        $filterFunc = array($this,'filterPassAll');
-        foreach( $dir->getEntries() as $name=>$target ) {
-            $target = call_user_func($filterFunc,$target);
-            if( $target === null ) continue;
-            $filteredTickets[$name] = $target;
-        }
+        $filter = new Grubbo_Ticket_TicketFilter();
+        $filter->assignedTo = $args['assigned-to'];
+        $filter->status     = $args['status'];
+        $filter->milestone  = $args['milestone'];
+        $filter->module     = $args['module'];
+        $filterFunc = array($filter,'filter');
+	$this->collectFiles( $dir, $filterFunc, null, $filteredTickets );
         ksort($filteredTickets);
         $tplVars['tickets'] = $filteredTickets;
+        $tplVars['pageTitle'] = "{$dirName} tickets";
+        $tplVars['currentFilter'] = $filter;
+        $tplVars['filterTicketStatusOptions'] = array_merge( array(''=>''), $this->getTicketStatusOptions() );
         $this->getTemplate('filter-tickets')->output($tplVars);
     }
 
@@ -376,18 +404,13 @@ class Grubbo_Mvc_Dispatcher {
         $this->currentActionName = $an;
 
         $tplVars = array(
+            'outputStream' => new Grubbo_IO_WebOutputStream(),
             'user' => $user,
             'resourceName' => $this->resourceName,
             'currentActionName' => $this->currentActionName,
             'documentActions' => array(),
             'siteTitle' => $this->siteTitle,
-            'ticketStatusOptions' => array(
-                'assigned' => 'Assigned',
-                'development' => 'Development',
-                'waiting' => 'Waiting',
-                'testing' => 'Testing',
-                'closed' => 'Closed',
-            ),
+            'ticketStatusOptions' => $this->getTicketStatusOptions(),
         );
 
         if( $this->resource !== null ) {
@@ -443,8 +466,17 @@ class Grubbo_Mvc_Dispatcher {
                     $this->getTemplate('new-ticket')->output($tplVars);
                     return;
                 }
-            } else if( preg_match('/^(.*)\/filter-tickets$/',$rp,$bif) ) {
-                return $this->dispatchFilterTicketsPage( $bif[1], $_REQUEST, $tplVars );
+            } else if( preg_match('/^(?:(.*)\/)?filter-tickets$/',$rp,$bif) ) {
+                return $this->dispatchFilterTicketsPage( $bif[1], $_REQUEST );
+            } else if( preg_match('/^(?:(.*)\/)?my-open-tickets$/',$rp,$bif) ) {
+                $args = $_REQUEST;
+                if( $user !== null and $args['assigned-to'] === null ) {
+                    $args['assigned-to'] = $user->getUsername();
+                }
+                if( $args['status'] === null ) {
+                    $args['status'] = 'assigned';
+                }
+                return $this->dispatchFilterTicketsPage( $bif[1], $args );
             } else if( $rp == 'login' ) {
                 $this->startSession();
                 $username = $_SERVER['PHP_AUTH_USER'];

@@ -72,7 +72,7 @@ class Grubbo_Mail_SmtpMailer implements Grubbo_Mail_Mailer {
             . "Date: ".gmdate('D, d M Y H:i:s T') . "\n"
             . "Subject: ".$message->getSubject() . "\n"
             . "\n"
-            . $message->getContent();
+            . $message->getContent()->getData();
 
         $addr = $this->getEmailAddress( $fromStr );
         $this->handlePearError( $s->mailFrom( $addr ) );

@@ -14,7 +14,8 @@ foreach( $entries as $name=>$target ) if( !($target instanceof Grubbo_Value_Dire
     $sortedEntries[$name] = $target;
 }
 
-foreach( $sortedEntries as $name=>$target ) {
+foreach( $sortedEntries as $name=>$entry ) {
+    $target = $entry->getContent();
     if( $target instanceof Grubbo_Value_Directory ) {
         $href = "$name/";
     } else {
