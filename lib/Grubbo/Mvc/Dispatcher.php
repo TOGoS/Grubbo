@@ -474,7 +474,7 @@ class Grubbo_Mvc_Dispatcher {
                     $args['assigned-to'] = $user->getUsername();
                 }
                 if( $args['status'] === null ) {
-                    $args['status'] = 'assigned';
+                    $args['status'] = 'assigned,development';
                 }
                 return $this->dispatchFilterTicketsPage( $bif[1], $args );
             } else if( $rp == 'login' ) {
