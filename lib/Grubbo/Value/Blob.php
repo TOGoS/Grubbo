@@ -1,6 +1,6 @@
 <?php
 
 interface Grubbo_Value_Blob {
-    function getContent();
-    function writeContent($stream);
+    function getData();
+    function writeDataToStream($stream);
 }

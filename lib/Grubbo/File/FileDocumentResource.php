@@ -28,18 +28,22 @@ class Grubbo_File_FileDocumentResource implements Grubbo_Value_Resource, Grubbo_
         fclose( $fh );
     }
 
+    public function getContent() {
+        return $this;
+    }
+
     public function getContentMetadata() {
         $this->load();
         return $this->contentMetadata;
     }
 
-    public function getContent() {
+    public function getData() {
         $this->load();
         return $this->content;
     }
 
-    public function writeContent( $stream ) {
-        fwrite( $stream, $this->getContent() );
+    public function writeDataToStream( $stream ) {
+        $stream->write( $this->getData() );
     }
 }
 

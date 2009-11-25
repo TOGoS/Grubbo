@@ -9,7 +9,8 @@ if( !$title ) { $title = 'Some Document';    }
 <?php $this->outputTemplate('page-header',array('pageTitle'=>$title)); ?>
 
 <?php
-$resource->writeContent(fopen('php://output','w'));
+$blob = $resource->getContent();
+$blob->writeDataToStream( $outputStream );
 ?>
 
 <?php $this->outputTemplate('page-footer',array()); ?>

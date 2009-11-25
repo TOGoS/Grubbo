@@ -1,14 +1,25 @@
 <?php $this->outputTemplate('page-header',array('pageTitle'=>$pageTitle)); ?>
 
-<p style="color:red">TODO: put form with filtering options here.</p>
+<form method="GET" action="filter-tickets">
+<fieldset>
+<legend>Filter tickets</legend>
+<table class="form-pairs">
+<tr><th>Assigned to</th><td><input type="text" name="assigned-to" value="<?php echo $currentFilter->assignedTo; ?>"/></td>
+<tr><th>Status</th><td><?php echo $this->formatDropdown('status', $filterTicketStatusOptions, $currentFilter->status); ?></td></tr>
+<tr><td colspan="2"><input type="submit" value="Apply Filter"/></td></tr>
+</fieldset>
+</table>
+</form>
+
 <p><a href="new-ticket">Create new ticket</a></p>
 
 <table>
 <tr><th>#</th><th>Module</th><th>Status</th><th>Assigned</th><th>Title</th></tr>
 <?php
 
-foreach( $tickets as $name=>$target ) {
-    $md = $target->getContentMetadata();
+foreach( $tickets as $name=>$entry ) {
+    $md = $entry->getContentMetadata();
+    $target = $entry->getContent();
 
     if( $target instanceof Grubbo_Value_Directory ) {
         $href = "$name/";

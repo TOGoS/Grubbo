@@ -1,3 +1,6 @@
 RewriteEngine on
-RewriteCond $1 !^dispatch|^resources
-RewriteRule ^(.*)$ dispatch.php/$1
+
+RewriteCond $1 !^dispatch\.php/|^resources/|^site/resources/
+RewriteRule ^(.*)$ dispatch.php/$1 [nosubreq,last]
+
+RewriteRule ^resources/(.*)$ site/resources/$1 [nosubreq,last]

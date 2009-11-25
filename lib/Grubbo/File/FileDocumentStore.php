@@ -3,6 +3,9 @@
 require_once 'Grubbo/Store/Store.php';
 require_once 'Grubbo/Store/StoreDirectory.php';
 require_once 'Grubbo/File/FileDocumentResource.php';
+require_once 'Grubbo/Value/SimpleDirectoryEntry.php';
+require_once 'Grubbo/Value/SimpleResource.php';
+require_once 'Grubbo/Value/StringBlob.php';
 
 class Grubbo_File_FileDocumentStore implements Grubbo_Store_Store {
     protected $pathPrefix;
@@ -55,12 +58,20 @@ class Grubbo_File_FileDocumentStore implements Grubbo_Store_Store {
             if( $e{0} == '.' ) continue;
             $fp = $dirFullPath.'/'.$e;
             if( is_dir($fp) ) {
-                $entries[$e] = $this->getDir($dirName.'/'.$e);
+                $entryName = $e;
+                $entryTarget = $this->getDir($dirName.'/'.$e);
+                $entryTargetMetadata = array();
             } else if( substr($e,strlen($e)-strlen($this->docPostfix)) == $this->docPostfix ) {
-                $entries[substr($e,0,strlen($e)-strlen($this->docPostfix))] = $this->getDoc($fp);
+                $entryName = substr($e,0,strlen($e)-strlen($this->docPostfix));
+                $entryTarget = $this->getDoc($fp);
+                $entryTargetMetadata = $entryTarget->getContentMetadata();
             } else {
-                $entries[$e] = $this->getFile($dirFullPath.'/'.$e);
+                $entryName = $e;
+                $entryTarget = $this->getFile($dirFullPath.'/'.$e);
+                $entryTargetMetadata = array();
             }
+            $entries[$entryName] = new Grubbo_Value_SimpleDirectoryEntry(
+                $entryName, $entryTarget, $entryTargetMetadata );
         }
         closedir( $dh );
         return $entries;
@@ -72,7 +83,7 @@ class Grubbo_File_FileDocumentStore implements Grubbo_Store_Store {
         $dir = dirname($path);
         if( $dir and !is_dir($dir)) mkdir( $dir, 0775, true );
         $fh = fopen( $path, "w" );
-        fwrite( $fh, $document->getContent() );
+        fwrite( $fh, $document->getContent()->getData() );
         fclose( $fh );
     }
 
@@ -96,8 +107,8 @@ class Grubbo_File_FileDocumentStore implements Grubbo_Store_Store {
                 $fileDoc = null;
             } else {
                 $docStr .= "\n";
-                $docStr .= $resource->getContent();
-                $fileDoc = new Grubbo_Value_StringResource( $docStr, $nonDocProps );
+                $docStr .= $resource->getContent()->getData();
+                $fileDoc = new Grubbo_Value_SimpleResource( $docStr, $nonDocProps );
             }
             $filename = $name.$this->docPostfix;
         } else {

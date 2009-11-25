@@ -7,7 +7,7 @@ require_once 'Grubbo/Value/Resource.php';
  * An implementation of Grubbo_Directory that depends on another object
  * and a path to get entries (useful to keep all the 'smarts' in one plce).
  */
-class Grubbo_Store_StoreDirectory implements Grubbo_Value_Directory, Grubbo_Value_Resource {
+class Grubbo_Store_StoreDirectory implements Grubbo_Value_Directory {
     protected $store;
     protected $dirName;
     protected $contentMetadata;
