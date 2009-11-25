@@ -151,7 +151,7 @@ class Grubbo_Mvc_Dispatcher {
     function getLoggedInUser() {
         if( !$this->user ) {
             $this->startSession();
-            $username = 'stevens';//$_SESSION['username'];
+            $username = $_SESSION['username'];
             if( $username ) {
                 $this->user = $this->getUser($username);
             } else {
