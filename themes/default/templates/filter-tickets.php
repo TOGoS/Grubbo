@@ -7,8 +7,8 @@
 <tr><th>Assigned to</th><td><input type="text" name="assigned-to" value="<?php echo $currentFilter->assignedTo; ?>"/></td>
 <tr><th>Status</th><td><?php echo $this->formatDropdown('status', $filterTicketStatusOptions, $currentFilter->status); ?></td></tr>
 <tr><td colspan="2"><input type="submit" value="Apply Filter"/></td></tr>
-</fieldset>
 </table>
+</fieldset>
 </form>
 
 <p><a href="my-open-tickets">My open tickets</a> | <a href="new-ticket">Create new ticket</a></p>
