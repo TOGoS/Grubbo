@@ -23,6 +23,8 @@ try {
     // Override any of these settings in site/config.php, if it exists
     if( file_exists('site/config.php') ) {
         $d->loadConfigFile('site/config.php');
+    } else {
+        $d->loadConfigFile('default-config.php');
     }
 
     $d->dispatch();
