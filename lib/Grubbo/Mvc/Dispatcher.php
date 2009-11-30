@@ -489,7 +489,7 @@ class Grubbo_Mvc_Dispatcher {
                         $title = $metadata['doc/title'];
                         $commitInfo = new Grubbo_Vcs_CommitInfo( $user, $date,
                             "New ticket $newResourceName" . ($title ? " - $title" : ''));
-                        $this->resourceStore->put( $newResourceName, $doc );
+                        $this->resourceStore->putResource( $newResourceName, $doc );
                         $this->resourceStore->commit( $commitInfo );
                         $this->resourceStore->closeTransaction();
                     } catch( Exception $e ) {
@@ -557,7 +557,7 @@ class Grubbo_Mvc_Dispatcher {
             $commitInfo = new Grubbo_Vcs_CommitInfo( $user, $date, $commitTitle );
             $this->resourceStore->openTransaction();
             try {
-                $this->resourceStore->put( $this->resourceName, null );
+                $this->resourceStore->putResource( $this->resourceName, null );
                 $this->resourceStore->commit( $commitInfo );
                 $this->resourceStore->closeTransaction();
             } catch( Exception $e ) {
@@ -575,7 +575,7 @@ class Grubbo_Mvc_Dispatcher {
             $commitInfo = new Grubbo_Vcs_CommitInfo( $user, $date, $commitTitle );
             $this->resourceStore->openTransaction();
             try {
-                $this->resourceStore->put( $this->resourceName, $doc );
+                $this->resourceStore->putResource( $this->resourceName, $doc );
                 $this->resourceStore->commit( $commitInfo );
                 $this->resourceStore->closeTransaction();
             } catch( Exception $e ) {
