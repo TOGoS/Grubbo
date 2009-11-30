@@ -10,8 +10,6 @@ require_once 'Grubbo/Vcs/GitDocumentStore.php';
 require_once 'Grubbo/IO/WebOutputStream.php';
 require_once 'Grubbo/Ticket/TicketFilter.php';
 
-require_once 'Grubbo/Auth/EarthITUsers.php';
-
 class Grubbo_Mvc_Dispatcher {
     public $resourceStore;
     public $loginController;
@@ -356,6 +354,7 @@ class Grubbo_Mvc_Dispatcher {
     }
 
     function collectFiles( $dir, $filterFunc, $prefix, &$dest ) {
+        if( $dir === null ) return;
         foreach( $dir->getEntries() as $name=>$entry ) {
             $fullName = $prefix ? "$prefix/$name" : $name;
             $target = $entry->getContent();
