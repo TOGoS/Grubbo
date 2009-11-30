@@ -76,12 +76,12 @@ class Grubbo_Vcs_GitDocumentStore extends Grubbo_File_FileDocumentStore implemen
         }
     }
 
-    public function _put( $name, $res ) {
+    public function _putResource( $name, $res ) {
         if( $res === null ) {
             // DELETED!!!
             $this->git('rm',$this->postWtPrefix.$name);
         } else {
-            parent::_put( $name, $res );
+            parent::_putResource( $name, $res );
             $this->git('add',$this->postWtPrefix.$name);
         }
     }

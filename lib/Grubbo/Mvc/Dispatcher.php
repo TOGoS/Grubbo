@@ -10,8 +10,11 @@ require_once 'Grubbo/Vcs/GitDocumentStore.php';
 require_once 'Grubbo/IO/WebOutputStream.php';
 require_once 'Grubbo/Ticket/TicketFilter.php';
 
+require_once 'Grubbo/Auth/EarthITUsers.php';
+
 class Grubbo_Mvc_Dispatcher {
     public $resourceStore;
+    public $loginController;
 
     public $siteTitle = 'Grubbo Demo';
     public $siteUri = 'http://grubbo.x/';    
@@ -22,11 +25,17 @@ class Grubbo_Mvc_Dispatcher {
 
     function __construct() {
         $this->resourceStore = new Grubbo_Vcs_GitDocumentStore('site','site/.git','site/documents/','.edoc');
+        $this->userFunc = null;
 
         // TODO: Replace filesystem template dir path with same
         // virtual directory structure used for documents...this
         // should be relatively easy.
         $this->templateDir = 'themes/default/templates';
+    }
+
+    function loadConfigFile( $filename ) {
+        $dispatcher = $this;
+        include $filename;
     }
 
     function getTemplate( $name ) {
@@ -137,15 +146,8 @@ class Grubbo_Mvc_Dispatcher {
     }
 
     function getUser( $username ) {
-        $users = array(
-            'stevens' => new Grubbo_Value_User( 'stevens', 'Dan Stevens', 'stevens@earthit.com' ),
-            'fagan' => new Grubbo_Value_User( 'fagan', 'Pitt Fagan', 'fagan@earthit.com' ),
-            'chapiewsky' => new Grubbo_Value_User( 'chapiewsky', 'Jared Chapiewsky', 'chapiewsky@earthit.com' ),
-            'losenegger' => new Grubbo_Value_User( 'losenegger', 'Corey Losenegger', 'losenegger@earthit.com' ),
-            'zeisloft' => new Grubbo_Value_User( 'zeisloft', 'Jennifer Zeisloft', 'zeisloft@earthit.com' ),
-            'simcock' => new Grubbo_Value_User( 'simcock', 'Adam Simcock', 'simcock@earthit.com' ),
-        );
-        return @$users[$username];
+        if( $this->userFunc === null ) return null;
+        return call_user_func($this->userFunc,$username);
     }
 
     function getLoggedInUser() {
@@ -367,10 +369,32 @@ class Grubbo_Mvc_Dispatcher {
         }
     }
 
-    function dispatchFilterTicketsPage( $dirName, $args ) {
+    function shouldShowLoginLinks() {
+        return ($this->loginController === null) ? false :
+            $this->loginController->requiresInternalLoginPage();
+    }
+
+    function showErrorPage( $errorHtml ) {
+        $tplVars = $this->tplVars;
+        $tplVars['pageTitle'] = 'Error';
+        $tplVars['errorHtml'] = $errorHtml;
+        $this->getTemplate('error')->output($tplVars);
+        return;
+    }
+
+    function showLoginPage( $errorHtml=null ) {
+        $tplVars = $this->tplVars;
+        $tplVars['pageTitle'] = 'Log in';
+        $tplVars['redirect'] = $this->getForwardUrl();
+        $tplVars['errorHtml'] = $errorHtml;
+        $this->getTemplate('login')->output($tplVars);
+        return;
+    }
+
+    function showFilterTicketsPage( $dirName, $args ) {
         $tplVars = $this->tplVars;
         $filteredTickets = array();
-        $dir = $this->resourceStore->get( $dirName );
+        $dir = $this->resourceStore->getResource( $dirName );
         $filter = new Grubbo_Ticket_TicketFilter();
         $filter->assignedTo = $args['assigned-to'];
         $filter->status     = $args['status'];
@@ -386,6 +410,20 @@ class Grubbo_Mvc_Dispatcher {
         $this->getTemplate('filter-tickets')->output($tplVars);
     }
 
+    function getForwardUrl() {
+        if( $url = @$_REQUEST['redirect'] ) {
+            return $url;
+        } else if( $url = $_SERVER['HTTP_REFERER'] ) {
+            return $url;
+        } else {
+            return $this->pathTo('page:');
+        }
+    }
+
+    function redirectBack() {
+        $this->redirectSeeOther( $this->getForwardUrl() );
+    }
+
     function dispatch() {
         $rp = substr($_SERVER['PATH_INFO'],1);
         $an = @$_REQUEST['action'] or $an = 'view';
@@ -393,10 +431,10 @@ class Grubbo_Mvc_Dispatcher {
         $date = $this->getCurrentDate();
         
         // If we're at a ../ URL, find an index page if one exists
-        if( preg_match('/^$|\/$/',$rp) and $resource = $this->resourceStore->get($rp.'index') ) {
+        if( preg_match('/^$|\/$/',$rp) and $resource = $this->resourceStore->getResource($rp.'index') ) {
             $rp = $rp.'index';
         } else {
-            $resource = $this->resourceStore->get($rp);
+            $resource = $this->resourceStore->getResource($rp);
         }
 
         $this->resourceName = $rp;
@@ -406,6 +444,7 @@ class Grubbo_Mvc_Dispatcher {
         $tplVars = array(
             'outputStream' => new Grubbo_IO_WebOutputStream(),
             'user' => $user,
+            'showLoginLinks' => $this->shouldShowLoginLinks(),
             'resourceName' => $this->resourceName,
             'currentActionName' => $this->currentActionName,
             'documentActions' => array(),
@@ -435,7 +474,7 @@ class Grubbo_Mvc_Dispatcher {
                     $doc = $this->getDocumentFromRequest();
                     $this->resourceStore->openTransaction();
                     try {
-                        $ticketDir = $this->resourceStore->get( $ticketDirName );
+                        $ticketDir = $this->resourceStore->getResource( $ticketDirName );
                         $ticketList = ($ticketDir === null) ? array() : $ticketDir->getEntries();
                         $highest = 1;
                         foreach( $ticketList as $name=>$_uhm ) {
@@ -449,7 +488,8 @@ class Grubbo_Mvc_Dispatcher {
                         $newResourceName = "$ticketDirName/$highest";
                         $metadata = $doc->getContentMetadata();
                         $title = $metadata['doc/title'];
-                        $commitInfo = new Grubbo_Vcs_CommitInfo( $user, $date, "New ticket $newResourceName" . ($title ? " - $title" : ''));
+                        $commitInfo = new Grubbo_Vcs_CommitInfo( $user, $date,
+                            "New ticket $newResourceName" . ($title ? " - $title" : ''));
                         $this->resourceStore->put( $newResourceName, $doc );
                         $this->resourceStore->commit( $commitInfo );
                         $this->resourceStore->closeTransaction();
@@ -467,7 +507,7 @@ class Grubbo_Mvc_Dispatcher {
                     return;
                 }
             } else if( preg_match('/^(?:(.*)\/)?filter-tickets$/',$rp,$bif) ) {
-                return $this->dispatchFilterTicketsPage( $bif[1], $_REQUEST );
+                return $this->showFilterTicketsPage( $bif[1], $_REQUEST );
             } else if( preg_match('/^(?:(.*)\/)?my-open-tickets$/',$rp,$bif) ) {
                 $args = $_REQUEST;
                 if( $user !== null and $args['assigned-to'] === null ) {
@@ -476,16 +516,17 @@ class Grubbo_Mvc_Dispatcher {
                 if( $args['status'] === null ) {
                     $args['status'] = 'assigned,development';
                 }
-                return $this->dispatchFilterTicketsPage( $bif[1], $args );
-            } else if( $rp == 'login' ) {
-                $this->startSession();
-                $username = $_SERVER['PHP_AUTH_USER'];
-                $_SESSION['username'] = $username;
-                $this->redirectSeeOther( $this->pathTo('page:') );
-            } else if( $rp == 'logout' ) {
-                $this->startSession();
-                $_SESSION['username'] = null;
-                $this->redirectSeeOther( $this->pathTo('page:') );
+                return $this->showFilterTicketsPage( $bif[1], $args );
+            } else if( $rp == 'login' and $this->loginController ) {
+                if( $this->loginController->handleLogin() ) {
+                    $this->redirectBack();
+                }
+                return;
+            } else if( $rp == 'logout' and $this->loginController ) {
+                if( $this->loginController->handleLogout() ) {
+                    $this->redirectBack();
+                }
+                return;
             }
         }
 

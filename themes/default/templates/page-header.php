@@ -21,15 +21,21 @@ if( $documentActions !== null ) foreach( $documentActions as $act ) {
 ?>
 
 <div class="action-bar">
-<span style="float:right"><?php
-    if( $user ) {
-        echo "Logged in as ", htmlspecialchars($user->getName()), ". &nbsp; ";
-        echo "<a href=\"", $this->htmlPathTo('page:logout'), "\">Log out</a>";
-    } else {
-        echo "<a href=\"", $this->htmlPathTo('page:login'), "\">Log in</a>";
+<?php
+    if( $showLoginLinks ) {
+        echo "<span style=\"float:right\">\n";
+        if( $user ) {
+            echo "Logged in as ", htmlspecialchars($user->getName()), ". &nbsp; ";
+            echo "<a href=\"", $this->htmlPathTo('page:logout'), "\">Log out</a>";
+        } else {
+            echo "<a href=\"", $this->htmlPathTo('page:login'), "\">Log in</a>";
+        }
+        echo "</span>\n";
     }
-?></span>
-<?php if( $showActionLinks ) { echo implode(' | ',$links); } ?>
+    if( $showActionLinks ) {
+        echo implode(' | ',$links);
+    }
+?>
 <span style="clear:both">&nbsp;</span>
 </div>
 

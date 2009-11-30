@@ -34,3 +34,6 @@ table.form-pairs th {
     background: #EEE;
     font-family: Verdana;
 }
+.error-messages {
+    color: red;
+}

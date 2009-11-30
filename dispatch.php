@@ -16,11 +16,15 @@ $smtp = new Net_SMTP('mail.earthit.com',25,'grubbo.earthit.com');
 #$smtp->setDebug(true);
 try {
     $d = new Grubbo_Mvc_Dispatcher();
-    $d->siteTitle = 'EarthIT Grubbo';
-    $d->siteUri = 'http://grubbo.earthit.com/';
-#    $d->mailer = new Grubbo_Mail_SmtpMailer($smtp);
-    $d->emailSourceDomain = 'grubbo.earthit.com';
-    $d->docUpdateFromAddress = 'EarthIT Grubbo Updates <updates@grubbo.earthit.com>';
+    $d->siteTitle = 'Grubbo';
+    preg_match( '/(.*\/)dispatch\.php$/', $_SERVER['SCRIPT_NAME'], $bif );
+    $d->siteUri = 'http://' . $_SERVER['SERVER_NAME'] . $bif[1];
+
+    // Override any of these settings in site/config.php, if it exists
+    if( file_exists('site/config.php') ) {
+        $d->loadConfigFile('site/config.php');
+    }
+
     $d->dispatch();
 } catch( Exception $e ) {
     ez_print_exception( $e );

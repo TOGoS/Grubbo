@@ -5,6 +5,8 @@ class Grubbo_Value_User {
     protected $name;
     protected $emailAddress;
 
+    public $passwordHash;
+
     public function __construct( $username, $name, $emailAddress ) {
         $this->username = $username;
         $this->name = $name;

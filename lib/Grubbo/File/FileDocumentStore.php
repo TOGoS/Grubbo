@@ -1,13 +1,13 @@
 <?php
 
-require_once 'Grubbo/Store/Store.php';
+require_once 'Grubbo/Store/ResourceStore.php';
 require_once 'Grubbo/Store/StoreDirectory.php';
 require_once 'Grubbo/File/FileDocumentResource.php';
 require_once 'Grubbo/Value/SimpleDirectoryEntry.php';
 require_once 'Grubbo/Value/SimpleResource.php';
 require_once 'Grubbo/Value/StringBlob.php';
 
-class Grubbo_File_FileDocumentStore implements Grubbo_Store_Store {
+class Grubbo_File_FileDocumentStore implements Grubbo_Store_ResourceStore {
     protected $pathPrefix;
     protected $docPostfix;
     protected $backupStore;
@@ -24,7 +24,7 @@ class Grubbo_File_FileDocumentStore implements Grubbo_Store_Store {
     }
 
     protected function getFile( $fullPath ) {
-        return new Grubbo_FileResource( $fullPath );
+        // return new Grubbo_File_FileResource( $fullPath );
     }
 
     protected function getDoc( $fullPath ) {
@@ -35,7 +35,7 @@ class Grubbo_File_FileDocumentStore implements Grubbo_Store_Store {
         return new Grubbo_Store_StoreDirectory( $this, $name, array() );
     }
 
-    public function get( $name ) {
+    public function getResource( $name ) {
         $fullPath = $this->pathPrefix.$name;
         if( is_dir( $fullPath ) ) {
             return $this->getDir( $name );
@@ -77,7 +77,7 @@ class Grubbo_File_FileDocumentStore implements Grubbo_Store_Store {
         return $entries;
     }
 
-    public function _put( $name, $document ) {
+    public function _putResource( $name, $document ) {
         $path = $this->pathPrefix.$name;
         if( is_dir($path) ) throw new Exception("Can't put at a dir path: $name -> $path");
         $dir = dirname($path);
@@ -87,7 +87,7 @@ class Grubbo_File_FileDocumentStore implements Grubbo_Store_Store {
         fclose( $fh );
     }
 
-    public function put( $name, $resource ) {
+    public function putResource( $name, $resource ) {
         $docStr = "";
         $isDoc = false;
         $nonDocProps = array();
@@ -115,6 +115,6 @@ class Grubbo_File_FileDocumentStore implements Grubbo_Store_Store {
             $fileDoc = $resource;
             $filename = $name;
         }
-        $this->_put( $filename, $fileDoc );
+        $this->_putResource( $filename, $fileDoc );
     }
 }
