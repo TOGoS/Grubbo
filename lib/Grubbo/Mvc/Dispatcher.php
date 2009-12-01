@@ -91,7 +91,11 @@ class Grubbo_Mvc_Dispatcher {
         $lines = explode( "\n", $fixedLinks );
         foreach( $lines as $line ) {
             $line = rtrim($line);
-            if( preg_match( '/^\* (.*)$/', $line, $bif ) ) {
+            if( preg_match( '/^(=+)\s*(.*)\s*\1$/', $line, $bif ) ) {
+                $newState = 'header';
+                $headerLevel = strlen($bif[1])+1; // == becomes <h3>
+                $line = $bif[2];
+            } else if( preg_match( '/^\* (.*)$/', $line, $bif ) ) {
                 $newState = 'li';
                 $line = $bif[1];
             } else if( preg_match( '/^\s+(.*)$/', $line, $bif ) ) {
@@ -112,7 +116,10 @@ class Grubbo_Mvc_Dispatcher {
             }
             $state = $newState;
 
-            if( $state == 'li' ) {
+            if( $state == 'header' ) {
+                $tag = 'h'.$headerLevel;
+                $html .= "<$tag>".$line."</$tag>\n\n";
+            } else if( $state == 'li' ) {
                 $html .= "<li>".$line."</li>\n";
             } else {
                 $html .= $line;
