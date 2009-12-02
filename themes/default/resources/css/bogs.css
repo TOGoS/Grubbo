@@ -31,8 +31,11 @@ h1, h2, h3, h4, h5, h6 {
     font-family: Verdana;
 }
 blockquote {
-    padding-right: 2em;
-    padding-left: 2em;
+    margin-right: 1ex;
+    padding-right: 1ex;
+    margin-left: 4ex;
+    padding-left: 1ex;
+    background: #F0F0F0;
 }
 table.form-pairs th {
     text-align: right;

@@ -50,7 +50,7 @@ class Grubbo_Wikitext_WikitextProcessor {
         $lines = explode( "\n", $fixedLinks );
         $lines[] = false;
         foreach( $lines as $line ) {
-            if( is_string($line) ) $line = rtrim($line);
+            if( is_string($line) ) $line = rtrim($line,"\r\n");
             $newListLevel = 0;
             if( $line === false ) {
                 $newState = 'end';
