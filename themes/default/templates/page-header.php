@@ -26,9 +26,9 @@ if( $documentActions !== null ) foreach( $documentActions as $act ) {
         echo "<span style=\"float:right\">\n";
         if( $user ) {
             echo "Logged in as ", htmlspecialchars($user->getName()), ". &nbsp; ";
-            echo "<a href=\"", $this->htmlPathTo('page:logout'), "\">Log out</a>";
+            echo "<a href=\"", $this->htmlPathTo('page:/logout'), "\">Log out</a>";
         } else {
-            echo "<a href=\"", $this->htmlPathTo('page:login'), "\">Log in</a>";
+            echo "<a href=\"", $this->htmlPathTo('page:/login'), "\">Log in</a>";
         }
         echo "</span>\n";
     }
