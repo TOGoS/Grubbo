@@ -13,6 +13,13 @@ body > * {
 body > ul {
     padding: 0.3em 0.3em 0.3em 2em;
 }
+li > ul, li > ol {
+    /* the li takes care of margin and padding */
+    margin: 0 0 0 0;
+    /* we still need to indent, though */
+    padding: 0 0 0 1.3em;
+}
+
 .action-bar {
     background: #DDD;
     padding: 8px;

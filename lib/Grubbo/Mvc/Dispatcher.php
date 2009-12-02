@@ -9,6 +9,7 @@ require_once 'Grubbo/Vcs/CommitInfo.php';
 require_once 'Grubbo/Vcs/GitDocumentStore.php';
 require_once 'Grubbo/IO/WebOutputStream.php';
 require_once 'Grubbo/Ticket/TicketFilter.php';
+require_once 'Grubbo/Wikitext/WikitextProcessor.php';
 
 class Grubbo_Mvc_Dispatcher {
     public $resourceStore;
@@ -48,80 +49,6 @@ class Grubbo_Mvc_Dispatcher {
         return $html;
     }
 
-    function replaceWikiLink( $match ) {
-        $uri = $match[1];
-        $linkText = $match[2];
-        $normalText = $match[3];
-        if( $normalText ) {
-            return htmlspecialchars($normalText);
-        } else {
-            if( !$linkText ) $linkText = $uri;
-            return "<a href=\"".htmlspecialchars($this->pathTo($uri))."\">".htmlspecialchars($linkText)."</a>";
-        }
-    }
-
-    function openWikiTextState( $state, &$html ) {
-        if( $state == 'bq' ) {
-            $html .= "<blockquote><pre>";
-        } else if( $state == 'p' ) {
-            $html .= "<p>";
-        } else if( $state == 'li' ) {
-            $html .= "<ul>\n";
-        }
-    }
-
-    function closeWikiTextState( $state, &$html ) {
-        if( $state == 'bq' ) {
-            $html .= "</pre></blockquote>\n\n";
-        } else if( $state == 'p' ) {
-            $html .= "</p>\n\n";
-        } else if( $state == 'li' ) {
-            $html .= "</ul>\n\n";
-        }
-    }
-
-    function formatWikiText( $wiki ) {
-        $fixedLinks = preg_replace_callback( '/\[([a-z]+:\S+)(?:\s([^\]]+))?\]|([^\[]*|\[)/', array($this,'replaceWikiLink'), $wiki );
-
-        // TODO: get a real wikitext formatter
-
-        $state = null;
-        $html = '';
-
-        $lines = explode( "\n", $fixedLinks );
-        foreach( $lines as $line ) {
-            $line = rtrim($line);
-            if( preg_match( '/^\* (.*)$/', $line, $bif ) ) {
-                $newState = 'li';
-                $line = $bif[1];
-            } else if( preg_match( '/^\s+(.*)$/', $line, $bif ) ) {
-                $newState = 'bq';
-                $line = $bif[1];
-            } else if( $line == '' ) {
-                $newState = null;
-            } else {
-                $newState = 'p';
-            }
-
-            if( $state != $newState ) {
-                $this->closeWikiTextState( $state, $html );
-                $this->openWikiTextState( $newState, $html );
-            }
-            if( $state == $newState and $state == 'p' ) {
-                $html .= "<br />";
-            }
-            $state = $newState;
-
-            if( $state == 'li' ) {
-                $html .= "<li>".$line."</li>\n";
-            } else {
-                $html .= $line;
-            }
-        }
-        $this->closeWikiTextState( $state, $html );
-        return $html;
-    }
-
     function formatDocumentBody( $res ) {
         if( $res === null ) return null;
 
@@ -130,7 +57,8 @@ class Grubbo_Mvc_Dispatcher {
         $fmt = $md['doc/format'];
         if( $fmt == 'wiki' ) {
             $content = $blob->getData();
-            $content = $this->formatWikiText( $content );
+            $wtp = new Grubbo_Wikitext_WikitextProcessor($this);
+            $content = $wtp->wikitextToHtml( $content );
             $md['doc/format'] = 'html';
             return new Grubbo_Value_SimpleResource( $content, $md );            
         } else if( $fmt == 'text' ) {
