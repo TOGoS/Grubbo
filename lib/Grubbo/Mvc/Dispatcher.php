@@ -190,9 +190,11 @@ class Grubbo_Mvc_Dispatcher {
     }
 
     function pathTo( $uri ) {
-        if( preg_match('/^page:(.*)$/',$uri,$bif) ) {
+        if( preg_match('/^page:\/(.*)$/',$uri,$bif) ) {
             $absWebPath = $bif[1];
-        } else if( preg_match('/^resource:(.*)$/',$uri,$bif) ) {
+        } else if( preg_match('/^page:(.*)$/',$uri,$bif) ) {
+            return $bif[1];
+        } else if( preg_match('/^resource:\/?(.*)$/',$uri,$bif) ) {
             $absWebPath = 'resources/'.$bif[1];
         } else if( preg_match('/^http:/',$uri) ) {
             return $uri;
@@ -511,7 +513,7 @@ class Grubbo_Mvc_Dispatcher {
                 throw $e;
             }
             $this->docUpdated( $doc, $this->resourceName );
-            $this->redirectSeeOther( $this->pathTo("page:".$this->resourceName) );
+            $this->redirectSeeOther( $this->pathTo("page:/".$this->resourceName) );
         } else if( $this->resource === null ) {
             $tplVars['pageTitle'] = "Create new page";
             $tplVars['newPage'] = true;
