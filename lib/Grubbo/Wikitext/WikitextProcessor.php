@@ -33,8 +33,6 @@ class Grubbo_Wikitext_WikitextProcessor {
             $html .= "</pre></blockquote>\n\n";
         } else if( $state == 'p' ) {
             $html .= "</p>\n\n";
-        } else if( $state == 'li' ) {
-            $html .= "</li>\n";
         }
     }
 
@@ -76,21 +74,20 @@ class Grubbo_Wikitext_WikitextProcessor {
 
             if( $state != $newState ) {
                 $this->closeWikitextState( $state, $html );
-                $this->openWikitextState( $newState, $html );
             }
 
-            if( $state == 'li' and $newListLevel <= $listLevel ) {
+            if( $state == 'li' and $listLevel >= $newListLevel ) {
                 $html .= "</li>\n";
             }
             #$html .= "(cll:$listLevel,$newListLevel $line)";
             while( $listLevel > $newListLevel ) {
                 $html .= str_repeat("  ",$listLevel-1)."</ul>";
+                $listLevel--;
                 if( $listLevel > 0 ) {
                     $html .= "</li>\n";
                 } else {
                     $html .= "\n\n";
                 }
-                $listLevel--;
             }
             if( $newState == 'li' ) {
                 #$html .= "(oll:$listLevel,$newListLevel)";
@@ -103,6 +100,10 @@ class Grubbo_Wikitext_WikitextProcessor {
                     }
                 }
             }
+            if( $state != $newState ) {
+                $this->openWikitextState( $newState, $html );
+            }
+
 
             if( $state == $newState ) {
                 if( $state == 'p' ) {
