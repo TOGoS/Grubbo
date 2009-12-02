@@ -57,6 +57,10 @@ class Grubbo_Wikitext_WikitextProcessor {
             } else if( preg_match( '/^--+$/', $line ) ) {
                 $newState = 'hr';
                 $line = '';
+            } else if( preg_match( '/^(=+)\s*(.*)\s*\1$/', $line, $bif ) ) {
+                $newState = 'header';
+                $headerLevel = strlen($bif[1])+1; // == becomes <h3>
+                $line = $bif[2];
             } else if( preg_match( '/^(\*+) (.*)$/', $line, $bif ) ) {
                 $newState = 'li';
                 $newListLevel = strlen($bif[1]);
@@ -107,7 +111,12 @@ class Grubbo_Wikitext_WikitextProcessor {
             }
             $state = $newState;
 
-            $html .= $line;
+            if( $state == 'header' ) {
+                $tag = 'h'.$headerLevel;
+                $html .= "<$tag>".$line."</$tag>\n\n";
+            } else {
+                $html .= $line;
+            }
         }
         return $html;
     }
