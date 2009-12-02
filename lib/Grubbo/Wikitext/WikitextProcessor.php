@@ -57,13 +57,13 @@ class Grubbo_Wikitext_WikitextProcessor {
             } else if( preg_match( '/^--+$/', $line ) ) {
                 $newState = 'hr';
                 $line = '';
-            } else if( preg_match( '/^(\s*)\* (.*)$/', $line, $bif ) ) {
+            } else if( preg_match( '/^(\*+) (.*)$/', $line, $bif ) ) {
                 $newState = 'li';
-                $newListLevel = 1 + strlen($bif[1]) / 2;
+                $newListLevel = strlen($bif[1]);
                 $line = $bif[2];
             } else if( preg_match( '/^\s+(.*)$/', $line, $bif ) ) {
                 $newState = 'bq';
-                $line = $bif[1];
+                $line = $bif[1]."\n";
             } else if( $line == '' ) {
                 $newState = null;
             } else {
