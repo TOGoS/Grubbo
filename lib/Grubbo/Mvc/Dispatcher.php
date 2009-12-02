@@ -427,7 +427,7 @@ class Grubbo_Mvc_Dispatcher {
                         throw $e;
                     }
                     $this->docUpdated( $doc, $newResourceName );
-                    $this->redirectSeeOther( $this->pathTo("page:$newResourceName") );
+                    $this->redirectSeeOther( $this->pathTo("page:/$newResourceName") );
                 } else {
                     $tplVars['newPage'] = true;
                     $tplVars['resource'] = $this->createBlankTicket();
