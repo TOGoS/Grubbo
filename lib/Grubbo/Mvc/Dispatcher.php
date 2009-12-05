@@ -196,7 +196,7 @@ class Grubbo_Mvc_Dispatcher {
             return $bif[1];
         } else if( preg_match('/^resource:\/?(.*)$/',$uri,$bif) ) {
             $absWebPath = 'resources/'.$bif[1];
-        } else if( preg_match('/^http:/',$uri) ) {
+        } else if( preg_match('/^(?:http|https|ftp):/',$uri) ) {
             return $uri;
         }
 
