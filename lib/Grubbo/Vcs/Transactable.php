@@ -1,7 +1,7 @@
 <?php
 
 interface Grubbo_Vcs_Transactable {
-    public function openTransaction();
-    public function closeTransaction();
-    public function cancelTransaction();
+    public function openTransaction( $path );
+    public function closeTransaction( $path );
+    public function cancelTransaction( $path );
 }

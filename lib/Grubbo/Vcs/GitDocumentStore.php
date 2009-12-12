@@ -1,11 +1,10 @@
 <?php
 
 require_once 'Grubbo/File/FileDocumentStore.php';
-require_once 'Grubbo/Vcs/Committable.php';
-require_once 'Grubbo/Vcs/Transactable.php';
 require_once 'Grubbo/Proc/ExternalProcess.php';
+require_once 'Grubbo/Vcs/Vcs.php';
 
-class Grubbo_Vcs_GitDocumentStore extends Grubbo_File_FileDocumentStore implements Grubbo_Vcs_Committable, Grubbo_Vcs_Transactable {
+class Grubbo_Vcs_GitDocumentStore extends Grubbo_File_FileDocumentStore implements Grubbo_Vcs_Vcs {
     protected $wtDir;
     protected $gitDir;
     protected $postWtPrefix;
@@ -44,7 +43,7 @@ class Grubbo_Vcs_GitDocumentStore extends Grubbo_File_FileDocumentStore implemen
 
     public function git() {
         $oldDir = getcwd();
-        chdir( $this->wtDir );
+        $cd = chdir( $this->wtDir );
         $args = $this->getGitArgv( func_get_args() );
         $proc = new Grubbo_Proc_ExternalProcess($args);
         try {
@@ -59,7 +58,7 @@ class Grubbo_Vcs_GitDocumentStore extends Grubbo_File_FileDocumentStore implemen
         }
     }
 
-    public function openTransaction() {
+    public function openTransaction( $_path ) {
         if( $this->lock !== null ) {
             throw new Exception("Lock already aquired!");
         }
@@ -86,17 +85,17 @@ class Grubbo_Vcs_GitDocumentStore extends Grubbo_File_FileDocumentStore implemen
         }
     }
 
-    public function commit( Grubbo_Vcs_CommitInfo $commitInfo ) {
+    public function commit( $path, Grubbo_Vcs_CommitInfo $commitInfo ) {
         $this->git('commit',
                    '-m',$commitInfo->getDescription(),
                    '--author='.$commitInfo->getAuthor()->getName().' <'.$commitInfo->getAuthor()->getEmailAddress().'>');
     }
 
-    public function cancelTransaction() {
-        $this->closeTransaction();
+    public function cancelTransaction( $_path ) {
+        $this->closeTransaction( $_path );
     }
 
-    public function closeTransaction() {
+    public function closeTransaction( $_path ) {
         if( $this->lock === null ) return;
         fclose( $this->lock ); // Release lock!
         $this->lock = null;

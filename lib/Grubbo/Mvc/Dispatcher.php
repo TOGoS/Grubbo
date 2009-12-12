@@ -401,7 +401,8 @@ class Grubbo_Mvc_Dispatcher {
                 $tplVars['pageTitle'] = "Creating new ticket";
                 if( $an == 'post' ) {
                     $doc = $this->getDocumentFromRequest();
-                    $this->resourceStore->openTransaction();
+                    $transactionPath = "$ticketDirName/";
+                    $this->resourceStore->openTransaction( $transactionPath );
                     try {
                         $ticketDir = $this->resourceStore->getResource( $ticketDirName );
                         $ticketList = ($ticketDir === null) ? array() : $ticketDir->getEntries();
@@ -420,10 +421,10 @@ class Grubbo_Mvc_Dispatcher {
                         $commitInfo = new Grubbo_Vcs_CommitInfo( $user, $date,
                             "New ticket $newResourceName" . ($title ? " - $title" : ''));
                         $this->resourceStore->putResource( $newResourceName, $doc );
-                        $this->resourceStore->commit( $commitInfo );
-                        $this->resourceStore->closeTransaction();
+                        $this->resourceStore->commit( $transactionPath, $commitInfo );
+                        $this->resourceStore->closeTransaction( $transactionPath );
                     } catch( Exception $e ) {
-                        $this->resourceStore->cancelTransaction();
+                        $this->resourceStore->cancelTransaction( $transactionPath );
                         throw $e;
                     }
                     $this->docUpdated( $doc, $newResourceName );
@@ -485,13 +486,13 @@ class Grubbo_Mvc_Dispatcher {
             }
             $commitTitle = "Deleted ".$this->resourceName.($title ? " - $docTitle" : '');
             $commitInfo = new Grubbo_Vcs_CommitInfo( $user, $date, $commitTitle );
-            $this->resourceStore->openTransaction();
+            $this->resourceStore->openTransaction( $this->resourceName );
             try {
                 $this->resourceStore->putResource( $this->resourceName, null );
-                $this->resourceStore->commit( $commitInfo );
-                $this->resourceStore->closeTransaction();
+                $this->resourceStore->commit( $this->resourceName, $commitInfo );
+                $this->resourceStore->closeTransaction( $this->resourceName );
             } catch( Exception $e ) {
-                $this->resourceStore->cancelTransaction();
+                $this->resourceStore->cancelTransaction( $this->resourceName );
                 throw $e;
             }
             $url = $this->pathTo('page:');
@@ -503,13 +504,13 @@ class Grubbo_Mvc_Dispatcher {
             $docTitle = $metadata['doc/title'];
             $commitTitle = ($pageIsNew ? "New page" : "Edited").": ".$this->resourceName.($title ? " - $docTitle" : '');
             $commitInfo = new Grubbo_Vcs_CommitInfo( $user, $date, $commitTitle );
-            $this->resourceStore->openTransaction();
+            $this->resourceStore->openTransaction( $this->resourceName );
             try {
                 $this->resourceStore->putResource( $this->resourceName, $doc );
-                $this->resourceStore->commit( $commitInfo );
-                $this->resourceStore->closeTransaction();
+                $this->resourceStore->commit( $this->resourceName, $commitInfo );
+                $this->resourceStore->closeTransaction( $this->resourceName );
             } catch( Exception $e ) {
-                $this->resourceStore->cancelTransaction();
+                $this->resourceStore->cancelTransaction( $this->resourceName );
                 throw $e;
             }
             $this->docUpdated( $doc, $this->resourceName );
