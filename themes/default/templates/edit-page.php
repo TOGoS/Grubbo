@@ -35,7 +35,8 @@ $text = $content->getData();
 <?php } ?>
 <tr><th>CC</th><td><input type="text" name="doc/cc" value="<?php echo htmlspecialchars($cc); ?>" size="60"/></td></tr>
 <tr><td colspan="2">
-<textarea name="content" rows="20" cols="80"><?php echo htmlspecialchars($text); ?></textarea><br />
+<textarea wrap="soft" name="content" rows="20" cols="80"><?php
+  echo htmlspecialchars($text); ?></textarea><br />
 </td></tr>
 <tr><td colspan="2">
 <input type="submit" name="update" value="Submit"/>

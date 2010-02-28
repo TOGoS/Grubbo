@@ -36,8 +36,10 @@ class Grubbo_Wikitext_WikitextProcessor {
         }
     }
 
+    # TODO: Replace with proper parser
+    # Parse to syntax tree, then interpret (or compile B-)
     function wikitextToHtml( $wiki ) {
-        $fixedLinks = preg_replace_callback( '/\[([a-z]+:\S+)(?:\s([^\]]+))?\]|([^\[]*|\[)/', array($this,'replaceWikiLink'), $wiki );
+        $fixedLinks = preg_replace_callback( '/\[([a-z]+:\S+)(?:\s([^\]]+))?\]/', array($this,'replaceWikiLink'), $wiki );
 
         // TODO: get a real wikitext formatter
 
@@ -46,7 +48,7 @@ class Grubbo_Wikitext_WikitextProcessor {
         $html = '';
 
         $lines = explode( "\n", $fixedLinks );
-        $lines[] = false;
+        $lines[] = false; # To ensure closing of last line!
         foreach( $lines as $line ) {
             if( is_string($line) ) $line = rtrim($line,"\r\n");
             $newListLevel = 0;
@@ -55,7 +57,7 @@ class Grubbo_Wikitext_WikitextProcessor {
             } else if( preg_match( '/^--+$/', $line ) ) {
                 $newState = 'hr';
                 $line = '';
-            } else if( preg_match( '/^(=+)\s*(.*)\s*\1$/', $line, $bif ) ) {
+            } else if( preg_match( '/^(=+)\s*(.*)\s*\1\s*$/', $line, $bif ) ) {
                 $newState = 'header';
                 $headerLevel = strlen($bif[1])+1; // == becomes <h3>
                 $line = $bif[2];
@@ -63,7 +65,7 @@ class Grubbo_Wikitext_WikitextProcessor {
                 $newState = 'li';
                 $newListLevel = strlen($bif[1]);
                 $line = $bif[2];
-            } else if( preg_match( '/^\s+(.*)$/', $line, $bif ) ) {
+            } else if( preg_match( '/^(?:\t|  )(.*)$/', $line, $bif ) ) {
                 $newState = 'bq';
                 $line = $bif[1]."\n";
             } else if( $line == '' ) {
@@ -79,7 +81,6 @@ class Grubbo_Wikitext_WikitextProcessor {
             if( $state == 'li' and $listLevel >= $newListLevel ) {
                 $html .= "</li>\n";
             }
-            #$html .= "(cll:$listLevel,$newListLevel $line)";
             while( $listLevel > $newListLevel ) {
                 $html .= str_repeat("  ",$listLevel-1)."</ul>";
                 $listLevel--;
@@ -90,7 +91,6 @@ class Grubbo_Wikitext_WikitextProcessor {
                 }
             }
             if( $newState == 'li' ) {
-                #$html .= "(oll:$listLevel,$newListLevel)";
                 if( $listLevel == $newListLevel ) {
                     $html .= str_repeat("  ",$newListLevel)."<li>";
                 } else {
