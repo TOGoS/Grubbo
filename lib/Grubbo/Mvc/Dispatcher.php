@@ -436,7 +436,6 @@ class Grubbo_Mvc_Dispatcher {
 				} else {
 					$tplVars['newPage'] = true;
 					$tplVars['resource'] = $this->createBlankTicket();
-					$tplVars['projectDirName'] = $projectDirName;
 					$this->getTemplate('new-ticket')->output($tplVars);
 					return;
 				}
