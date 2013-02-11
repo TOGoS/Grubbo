@@ -7,7 +7,7 @@ require_once 'Grubbo/IO/OutputStream.php';
  * (or any registered output buffers) using 'echo'.
  */
 class Grubbo_IO_WebOutputStream implements Grubbo_IO_OutputStream {
-    public function write( $data ) {
-        echo $data;
-    }
+	public function write( $data ) {
+		echo $data;
+	}
 }
