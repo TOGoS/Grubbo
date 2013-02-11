@@ -9,7 +9,7 @@ class Grubbo_Wikitext_WikitextProcessor {
     function replaceWikiLink( $match ) {
         $uri = $match[1];
         $linkText = $match[2];
-        $normalText = $match[3];
+        $normalText = Grubbo_Util_ArrayUtil::coalesce($match[3]);
         if( $normalText ) {
             return htmlspecialchars($normalText);
         } else {

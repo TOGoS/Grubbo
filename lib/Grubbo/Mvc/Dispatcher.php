@@ -31,7 +31,7 @@ class Grubbo_Mvc_Dispatcher {
         // should be relatively easy.
         $this->templateDir = 'themes/default/templates';
     }
-
+    
     function loadConfigFile( $filename ) {
         $dispatcher = $this;
         include $filename;
@@ -76,11 +76,14 @@ class Grubbo_Mvc_Dispatcher {
         return call_user_func($this->userFunc,$username);
     }
 
+    protected $user;
+    protected $permissions;
+    
     function getLoggedInUser() {
         if( !$this->user ) {
             $this->startSession();
-            $username = $_SESSION['username'];
-            if( $username ) {
+            $username =& $_SESSION['username'];
+            if( isset($username) ) {
                 $this->user = $this->getUser($username);
             } else {
                 $this->user = null;
@@ -251,6 +254,7 @@ class Grubbo_Mvc_Dispatcher {
         if( !$this->sessionStarted ) {
             session_name('Grubbo');
             session_start();
+            $this->sessionStarted = true;
         }
     }
 
@@ -325,10 +329,10 @@ class Grubbo_Mvc_Dispatcher {
         $filteredTickets = array();
         $dir = $this->resourceStore->getResource( $dirName );
         $filter = new Grubbo_Ticket_TicketFilter();
-        $filter->assignedTo = $args['assigned-to'];
-        $filter->status     = $args['status'];
-        $filter->milestone  = $args['milestone'];
-        $filter->module     = $args['module'];
+        $filter->assignedTo = Grubbo_Util_ArrayUtil::coalesce($args['assigned-to']);
+        $filter->status     = Grubbo_Util_ArrayUtil::coalesce($args['status']);
+		  $filter->milestone  = Grubbo_Util_ArrayUtil::coalesce($args['milestone']);
+		  $filter->module     = Grubbo_Util_ArrayUtil::coalesce($args['module']);
         $filterFunc = array($filter,'filter');
 	$this->collectFiles( $dir, $filterFunc, null, $filteredTickets );
         ksort($filteredTickets);
@@ -440,10 +444,10 @@ class Grubbo_Mvc_Dispatcher {
                 return $this->showFilterTicketsPage( $bif[1], $_REQUEST );
             } else if( preg_match('/^(?:(.*)\/)?my-open-tickets$/',$rp,$bif) ) {
                 $args = $_REQUEST;
-                if( $user !== null and $args['assigned-to'] === null ) {
+                if( $user !== null and !isset($args['assigned-to']) ) {
                     $args['assigned-to'] = $user->getUsername();
                 }
-                if( $args['status'] === null ) {
+                if( !isset($args['status']) ) {
                     $args['status'] = 'assigned,development';
                 }
                 return $this->showFilterTicketsPage( $bif[1], $args );
@@ -475,8 +479,9 @@ class Grubbo_Mvc_Dispatcher {
         if( $an == 'edit' and $this->resource !== null ) {
             $this->ensureEditPermission();
             $tplVars['pageTitle'] = "Editing $docTitle";
+            $tplVars['newPage'] = false;
             $this->getTemplate('edit-page')->output($tplVars);
-        } else if( $an == 'post' and $_REQUEST['delete'] ) {
+        } else if( $an == 'post' and Grubbo_Util_ArrayUtil::coalesce($_REQUEST['delete']) ) {
             $this->ensureEditPermission();
             if( $this->resource ) {
                 $metadata = $this->resource->getContentMetadata();
@@ -502,7 +507,7 @@ class Grubbo_Mvc_Dispatcher {
             $doc = $this->getDocumentFromRequest();
             $metadata = $doc->getContentMetadata();
             $docTitle = $metadata['doc/title'];
-            $commitTitle = ($pageIsNew ? "New page" : "Edited").": ".$this->resourceName.($title ? " - $docTitle" : '');
+            $commitTitle = ($pageIsNew ? "New page" : "Edited").": ".$this->resourceName.($docTitle ? " - $docTitle" : '');
             $commitInfo = new Grubbo_Vcs_CommitInfo( $user, $date, $commitTitle );
             $this->resourceStore->openTransaction( $this->resourceName );
             try {
@@ -521,7 +526,7 @@ class Grubbo_Mvc_Dispatcher {
             $tplVars['resource'] = $this->createBlankDocument();
             $this->getTemplate('new-page')->output($tplVars);
         } else {
-            if( !$tplVars['pageTitle'] ) { $tplVars['pageTitle'] = $docTitle; }
+            if( !isset($tplVars['pageTitle']) ) { $tplVars['pageTitle'] = $docTitle; }
             $this->outputResource( $this->resource, $tplVars );
         }
     }

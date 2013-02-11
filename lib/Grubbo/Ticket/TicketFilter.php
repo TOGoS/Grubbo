@@ -24,17 +24,17 @@ class Grubbo_Ticket_TicketFilter {
         $haystack = $this->parseSet($haystackStr);
 
         foreach( $needles as $needle ) {
-            if( $haystack[$needle] ) return true;
+            if( isset($haystack[$needle]) ) return true;
         }
         return false;
     }
 
     public function filter( $entry ) {
         $md = $entry->getContentMetadata();
-        if( !$this->inList( $this->assignedTo, $md['doc/assigned-to'] ) ) return null;
-        if( !$this->inList( $this->status,     $md['doc/status']      ) ) return null;
-        if( !$this->inList( $this->milestone,  $md['doc/milestone']   ) ) return null;
-        if( !$this->inList( $this->module,     $md['doc/module']      ) ) return null;
+        if( !$this->inList( $this->assignedTo, Grubbo_Util_ArrayUtil::coalesce($md['doc/assigned-to'])) ) return null;
+        if( !$this->inList( $this->status,     Grubbo_Util_ArrayUtil::coalesce($md['doc/status']     )) ) return null;
+        if( !$this->inList( $this->milestone,  Grubbo_Util_ArrayUtil::coalesce($md['doc/milestone']  )) ) return null;
+        if( !$this->inList( $this->module,     Grubbo_Util_ArrayUtil::coalesce($md['doc/module']     )) ) return null;
         return $entry;
     }
 }

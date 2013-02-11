@@ -23,7 +23,7 @@ class Grubbo_Mvc_FormLoginController implements Grubbo_Mvc_LoginController {
 
     public function handleLogin() {
         $this->dispatcher->startSession();
-        $username = $_REQUEST['username'];
+        $username = Grubbo_Util_ArrayUtil::coalesce($_REQUEST['username']);
         if( !$username ) {
             $this->dispatcher->showLoginPage();
             return false;

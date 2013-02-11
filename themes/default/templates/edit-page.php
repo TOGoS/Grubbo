@@ -5,12 +5,12 @@
 $metadata = $resource->getContentMetadata();
 $content = $resource->getContent();
 $hiddenMetadata = array();
-$docTitle = $metadata['doc/title'] or $docTitle = 'Some Page';
-$isTicket = $metadata['doc/ticket'];
-$ticketStatus = $metadata['doc/status'];
-$assignedTo = $metadata['doc/assigned-to'];
-$module = $metadata['doc/module'];
-$cc = $metadata['doc/cc'];
+$docTitle = Grubbo_Util_ArrayUtil::coalesce($metadata['doc/title']) or $docTitle = 'Some Page';
+$isTicket = Grubbo_Util_ArrayUtil::coalesce($metadata['doc/ticket']);
+$ticketStatus = Grubbo_Util_ArrayUtil::coalesce($metadata['doc/status']);
+$assignedTo = Grubbo_Util_ArrayUtil::coalesce($metadata['doc/assigned-to']);
+$module = Grubbo_Util_ArrayUtil::coalesce($metadata['doc/module']);
+$cc = Grubbo_Util_ArrayUtil::coalesce($metadata['doc/cc']);
 foreach( $metadata as $k=>$v ) {
     if( $k == 'doc/title' or $k == 'doc/cc' or $k == 'doc/assigned-to' ) {
     } else {

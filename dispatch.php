@@ -6,11 +6,7 @@ ini_set('include_path',
         ini_get('include_path'));
 
 require_once 'Grubbo/debug-functions.php';
-
-require_once 'Net/SMTP.php';
-require_once 'Grubbo/Mail/Message.php';
-require_once 'Grubbo/Mail/SmtpMailer.php';
-require_once 'Grubbo/Mvc/Dispatcher.php';
+require_once 'Grubbo/init-autoloader.php';
 
 $smtp = new Net_SMTP('mail.earthit.com',25,'grubbo.earthit.com');
 #$smtp->setDebug(true);
@@ -31,18 +27,3 @@ try {
 } catch( Exception $e ) {
     ez_print_exception( $e );
 }
-die();
-
-?>
-<html>
-<head>
-<title>Welcome to EITBugs!</title>
-</head>
-<body>
-
-<h2>Welcome to EITBugs!</h2>
-
-<?php echo $rp; ?>
-
-</body>
-</html>

@@ -1,13 +1,13 @@
 <?php
 
 $rmd = $resource->getContentMetadata();
-if( !$title ) { $title = @$rmd['title'];     }
-if( !$title ) { $title = @$rmd['doc/title']; }
-if( !$title ) { $title = 'Some Document';    }
+$title = Grubbo_Util_ArrayUtil::coalesceArr(array(
+    &$title, &$rmd['title'], &$rmd['doc/title'], 'Some Document'
+));
 
-$isTicket = $rmd['doc/ticket'];
-$assignedTo = $rmd['doc/assigned-to'];
-$status = $rmd['doc/status'];
+$isTicket   = Grubbo_Util_ArrayUtil::coalesce($rmd['doc/ticket'],false);
+$assignedTo = Grubbo_Util_ArrayUtil::coalesce($rmd['doc/assigned-to'], false);
+$status     = Grubbo_Util_ArrayUtil::coalesce($rmd['doc/status'], false);
 
 ?>
 <?php $this->outputTemplate('page-header',array('pageTitle'=>$title)); ?>

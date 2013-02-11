@@ -16,7 +16,7 @@ class Grubbo_Auth_Permissions {
 
     function isActionAllowed( $verb, $target ) {
         if( @$this->permissions['*'] ) return true;
-        $perm = $this->permissions[$verb];
+        $perm =& $this->permissions[$verb];
         if( $perm == '*' or is_array($perm) && $perm[$target] ) return true;
         return false;
     }

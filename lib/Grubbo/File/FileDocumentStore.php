@@ -82,7 +82,10 @@ class Grubbo_File_FileDocumentStore implements Grubbo_Store_ResourceStore {
         if( is_dir($path) ) throw new Exception("Can't put at a dir path: $name -> $path");
         $dir = dirname($path);
         if( $dir and !is_dir($dir)) mkdir( $dir, 0775, true );
-        $fh = fopen( $path, "w" );
+        $fh = @fopen( $path, "w" );
+		  if( $fh === false ) {
+			  throw new Exception("Failed to open '$path' for writing");
+		  }
         fwrite( $fh, $document->getContent()->getData() );
         fclose( $fh );
     }

@@ -29,10 +29,10 @@ foreach( $tickets as $name=>$entry ) {
 
     echo "<tr>";
     echo "<td><a href=\"", htmlspecialchars($href), "\">", htmlspecialchars($href), "</a></td>";
-    echo "<td>", htmlspecialchars($md['doc/module']), "</td>";
-    echo "<td>", htmlspecialchars($md['doc/status']), "</td>";
-    echo "<td>", htmlspecialchars($md['doc/assigned-to']), "</td>";
-    echo "<td><a href=\"", htmlspecialchars($href), "\">", htmlspecialchars($md['doc/title']), "</a></td>";
+    echo "<td>", htmlspecialchars(Grubbo_Util_ArrayUtil::coalesce($md['doc/module'])), "</td>";
+    echo "<td>", htmlspecialchars(Grubbo_Util_ArrayUtil::coalesce($md['doc/status'])), "</td>";
+    echo "<td>", htmlspecialchars(Grubbo_Util_ArrayUtil::coalesce($md['doc/assigned-to'])), "</td>";
+    echo "<td><a href=\"", htmlspecialchars($href), "\">", htmlspecialchars(Grubbo_Util_ArrayUtil::coalesce($md['doc/title'])), "</a></td>";
     echo "</tr>\n";
 }
 
